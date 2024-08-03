@@ -1,0 +1,55 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 0.7437038962619593,
+      "y": 4.320740582515391
+    },
+    "rotation": -59.682052822906385
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Source to H"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "H to Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "H Shoot to G"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "G to Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "G Shoot to F"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "F to Shoot"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

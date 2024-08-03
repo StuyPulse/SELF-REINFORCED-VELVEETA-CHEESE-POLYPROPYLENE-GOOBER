@@ -1,0 +1,61 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.4053936459807443,
+      "y": 5.5301848373414
+    },
+    "rotation": 0
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Center to B"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B to F"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "F to Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "F Shoot to G"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "G to Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "G Shoot to H"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "H to Shoot"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

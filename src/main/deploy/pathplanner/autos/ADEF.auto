@@ -1,0 +1,61 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.435487934219916,
+      "y": 6.595791855088175
+    },
+    "rotation": 1.3048503501930353
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Amp to A"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "A to D"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "D to Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "D Shoot to E"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "E to Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "E Shoot to F"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "F to Shoot"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

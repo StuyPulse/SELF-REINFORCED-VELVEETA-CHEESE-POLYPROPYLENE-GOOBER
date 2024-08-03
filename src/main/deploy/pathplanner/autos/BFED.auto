@@ -1,0 +1,61 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.4053936459807443,
+      "y": 5.5301848373414
+    },
+    "rotation": 0
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Center to B"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B to F"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "F to Shoot ALT"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "F Shoot ALT to E"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "E to Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "E Shoot to D"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "D to Shoot"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

@@ -1,0 +1,37 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.4365936349060198,
+      "y": 5.5179740558513855
+    },
+    "rotation": 0
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Center to C"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "C to B"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "B to A"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}
