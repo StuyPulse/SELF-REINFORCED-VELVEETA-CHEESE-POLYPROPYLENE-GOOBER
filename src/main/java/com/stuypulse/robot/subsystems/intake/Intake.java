@@ -1,9 +1,11 @@
 package com.stuypulse.robot.subsystems.intake;
 
 import com.stuypulse.robot.constants.Settings;
+import com.stuypulse.robot.constants.Ports.Swerve;
 import com.stuypulse.robot.subsystems.arm.Arm;
 import com.stuypulse.robot.subsystems.shooter.Shooter;
 import com.stuypulse.robot.subsystems.shooter.Shooter.FeederState;
+import com.stuypulse.robot.subsystems.swerve.SwerveDrive;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -47,6 +49,14 @@ public abstract class Intake extends SubsystemBase {
 
     @Override
     public void periodic() {
+        if (state == State.STOP
+            && !hasNote()
+            && !Shooter.getInstance().hasNote()
+            && Math.hypot(SwerveDrive.getInstance().getChassisSpeeds().vxMetersPerSecond, SwerveDrive.getInstance().getChassisSpeeds().vyMetersPerSecond) 
+                > (Settings.Driver.Drive.DEADBAND.get() * Settings.Swerve.MAX_LINEAR_VELOCITY)
+        ) {
+            setState(State.ACQUIRING);
+        }
         if (state == State.ACQUIRING && hasNote()) {
             state = State.STOP;
         }
