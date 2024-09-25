@@ -1,25 +1,17 @@
 package com.stuypulse.robot.subsystems.swerve;
 
 import java.util.ArrayList;
-import java.util.function.Supplier;
 
 import com.ctre.phoenix6.Utils;
-import com.ctre.phoenix6.configs.MountPoseConfigs;
-import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrainConstants;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.FollowPathHolonomic;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
-import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 import com.stuypulse.robot.Robot;
@@ -38,7 +30,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -236,6 +227,11 @@ public class SwerveDrive extends SwerveDrivetrain implements Subsystem {
         }
     }
 
+    public boolean isMoving() {
+        return Math.hypot(getChassisSpeeds().vxMetersPerSecond, getChassisSpeeds().vyMetersPerSecond) 
+                > (Settings.Driver.Drive.DEADBAND.get() * Settings.Swerve.MAX_LINEAR_VELOCITY);
+    }
+
     public boolean isAlignedToSpeaker() {
         Translation2d currentPose = SwerveDrive.getInstance().getPose().getTranslation();
         Translation2d speakerPose = Field.getAllianceSpeakerPose().getTranslation();
@@ -274,7 +270,6 @@ public class SwerveDrive extends SwerveDrivetrain implements Subsystem {
 
         addVisionMeasurement(poseSum.div(areaSum), timestampSum / areaSum,
             DriverStation.isAutonomous() ? VecBuilder.fill(0.2, 0.2, 1) : VecBuilder.fill(0.2, 0.2, 1));
-        
     }
 
     public void setVisionEnabled(boolean enabled) {

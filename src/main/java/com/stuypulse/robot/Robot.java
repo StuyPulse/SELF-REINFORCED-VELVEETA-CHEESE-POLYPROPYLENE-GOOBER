@@ -20,6 +20,15 @@ public class Robot extends TimedRobot {
     private CommandScheduler scheduler;
     private Command auto;
 
+    public enum State {
+        AUTON,
+        TELEOP,
+        TEST,
+        DISABLED
+    }
+
+    private static State state;
+
     /*************************/
     /*** ROBOT SCHEDULEING ***/
     /*************************/
@@ -36,7 +45,7 @@ public class Robot extends TimedRobot {
 
         if (Robot.isReal()) CameraServer.startAutomaticCapture().setVideoMode(PixelFormat.kMJPEG, 80, 60, 30);
 
-        SmartDashboard.putString("Robot State", "DISABLED");
+        state = State.DISABLED;
     }
 
     @Override
@@ -49,13 +58,18 @@ public class Robot extends TimedRobot {
                 && DriverStation.getAlliance().get() == DriverStation.Alliance.Blue;
     }
 
+    public static boolean inTeleop() {
+        return state == State.TELEOP;
+    }
+
     /*********************/
     /*** DISABLED MODE ***/
     /*********************/
 
     @Override
     public void disabledInit() {
-        SmartDashboard.putString("Robot State", "DISABLED");
+        state = State.DISABLED;
+        SmartDashboard.putString("Robot State", state.toString());
     }
 
     @Override
@@ -78,7 +92,8 @@ public class Robot extends TimedRobot {
 
         scheduler.schedule(new LEDReset());
 
-        SmartDashboard.putString("Robot State", "AUTON");
+        state = State.AUTON;
+        SmartDashboard.putString("Robot State", state.toString());
     }
 
     @Override
@@ -96,7 +111,8 @@ public class Robot extends TimedRobot {
         if (auto != null) {
             auto.cancel();
         }
-        SmartDashboard.putString("Robot State", "TELEOP");
+        state = State.TELEOP;
+        SmartDashboard.putString("Robot State", state.toString());
     }
 
     @Override
@@ -112,6 +128,8 @@ public class Robot extends TimedRobot {
     @Override
     public void testInit() {
         CommandScheduler.getInstance().cancelAll();
+        state = State.TEST;
+        SmartDashboard.putString("Robot State", state.toString());
     }
 
     @Override

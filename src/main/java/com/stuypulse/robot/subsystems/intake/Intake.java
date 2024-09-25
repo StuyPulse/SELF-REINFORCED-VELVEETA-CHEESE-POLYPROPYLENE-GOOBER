@@ -1,5 +1,6 @@
 package com.stuypulse.robot.subsystems.intake;
 
+import com.stuypulse.robot.Robot;
 import com.stuypulse.robot.constants.Settings;
 import com.stuypulse.robot.constants.Ports.Swerve;
 import com.stuypulse.robot.subsystems.arm.Arm;
@@ -52,8 +53,8 @@ public abstract class Intake extends SubsystemBase {
         if (state == State.STOP
             && !hasNote()
             && !Shooter.getInstance().hasNote()
-            && Math.hypot(SwerveDrive.getInstance().getChassisSpeeds().vxMetersPerSecond, SwerveDrive.getInstance().getChassisSpeeds().vyMetersPerSecond) 
-                > (Settings.Driver.Drive.DEADBAND.get() * Settings.Swerve.MAX_LINEAR_VELOCITY)
+            && SwerveDrive.getInstance().isMoving()
+            && Robot.inTeleop()
         ) {
             setState(State.ACQUIRING);
         }
