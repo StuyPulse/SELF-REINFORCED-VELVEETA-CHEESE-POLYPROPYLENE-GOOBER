@@ -1,9 +1,7 @@
 package com.stuypulse.robot;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.ctre.phoenix6.Utils;
-import com.pathplanner.lib.path.PathPlannerPath;
+import com.stuypulse.robot.Robot.State;
 import com.stuypulse.robot.commands.BuzzController;
 import com.stuypulse.robot.commands.arm.ArmToAmp;
 import com.stuypulse.robot.commands.arm.ArmToClimbing;
@@ -19,46 +17,34 @@ import com.stuypulse.robot.commands.arm.ArmWaitUntilAtTarget;
 import com.stuypulse.robot.commands.auton.DoNothingAuton;
 import com.stuypulse.robot.commands.auton.Mobility;
 import com.stuypulse.robot.commands.auton.ADEF.FivePieceADEF;
-import com.stuypulse.robot.commands.auton.BCA.AltFourPieceBCA;
 import com.stuypulse.robot.commands.auton.BCA.FourPieceBCA;
 import com.stuypulse.robot.commands.auton.HGF.FourPieceHGF;
-import com.stuypulse.robot.commands.auton.SideAutons.OnePieceAmpSide;
-import com.stuypulse.robot.commands.auton.SideAutons.OnePieceSourceSide;
 import com.stuypulse.robot.commands.intake.IntakeDeacquire;
 import com.stuypulse.robot.commands.intake.IntakeSetAcquire;
 import com.stuypulse.robot.commands.intake.IntakeStop;
 import com.stuypulse.robot.commands.leds.LEDDefaultMode;
-import com.stuypulse.robot.commands.leds.LEDReset;
 import com.stuypulse.robot.commands.leds.LEDSet;
 import com.stuypulse.robot.commands.shooter.ShooterFeederDeacquire;
 import com.stuypulse.robot.commands.shooter.ShooterFeederShoot;
 import com.stuypulse.robot.commands.shooter.ShooterFeederStop;
 import com.stuypulse.robot.commands.shooter.ShooterWaitForTarget;
 import com.stuypulse.robot.commands.swerve.SwerveDriveDrive;
-import com.stuypulse.robot.commands.swerve.SwerveDriveDriveRobotRelative;
-import com.stuypulse.robot.commands.swerve.driveAligned.SwerveDriveDriveAlignedAmp;
+import com.stuypulse.robot.commands.swerve.SwerveDriveSeedFieldRelative;
 import com.stuypulse.robot.commands.swerve.driveAligned.SwerveDriveDriveAlignedFerry;
 import com.stuypulse.robot.commands.swerve.driveAligned.SwerveDriveDriveAlignedManualFerry;
 import com.stuypulse.robot.commands.swerve.driveAligned.SwerveDriveDriveAlignedSpeaker;
-import com.stuypulse.robot.commands.swerve.SwerveDriveSeedFieldRelative;
 import com.stuypulse.robot.constants.LEDInstructions;
 import com.stuypulse.robot.constants.Ports;
 import com.stuypulse.robot.constants.Settings;
-import com.stuypulse.stuylib.input.Gamepad;
-import com.stuypulse.stuylib.input.gamepads.AutoGamepad;
-import com.stuypulse.robot.subsystems.shooter.Shooter;
-import com.stuypulse.robot.subsystems.swerve.SwerveDrive;
-import com.stuypulse.robot.subsystems.swerve.Telemetry;
-import com.stuypulse.robot.subsystems.vision.AprilTagVision;
-import com.stuypulse.robot.util.PathUtil.AutonConfig;
-import com.stuypulse.robot.util.ShooterLobFerryInterpolation;
-import com.stuypulse.robot.util.ShooterSpeeds;
 import com.stuypulse.robot.subsystems.arm.Arm;
 import com.stuypulse.robot.subsystems.intake.Intake;
 import com.stuypulse.robot.subsystems.leds.LEDController;
-import com.stuypulse.robot.subsystems.leds.instructions.LEDInstruction;
-import com.stuypulse.robot.subsystems.leds.instructions.LEDPulseColor;
-import com.stuypulse.robot.subsystems.leds.instructions.LEDRainbow;
+import com.stuypulse.robot.subsystems.shooter.Shooter;
+import com.stuypulse.robot.subsystems.swerve.SwerveDrive;
+import com.stuypulse.robot.subsystems.vision.AprilTagVision;
+import com.stuypulse.robot.util.PathUtil.AutonConfig;
+import com.stuypulse.stuylib.input.Gamepad;
+import com.stuypulse.stuylib.input.gamepads.AutoGamepad;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -68,6 +54,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -109,6 +96,19 @@ public class RobotContainer {
 
         new Trigger(() -> Intake.getInstance().getState() == Intake.State.ACQUIRING && Intake.getInstance().hasNote())
             .onTrue(new BuzzController(driver, 1));
+
+        new Trigger(() -> Intake.getInstance().getState() == Intake.State.STOP
+            && !Intake.getInstance().hasNote()
+            && !Shooter.getInstance().hasNote()
+            && SwerveDrive.getInstance().isMoving()
+            && Robot.inTeleop()
+        ).onTrue(new IntakeSetAcquire());
+
+        new Trigger(() -> Intake.getInstance().getState() == Intake.State.ACQUIRING
+            && !SwerveDrive.getInstance().isMoving()
+            && Robot.inTeleop()
+            && !(driver.getRightTriggerPressed() || driver.getLeftTriggerPressed())
+        ).onTrue(new IntakeStop());
     }
 
     /****************/
@@ -144,21 +144,21 @@ public class RobotContainer {
             .onTrue(new ArmToFeed())
             // .whileTrue(new SwerveDriveDriveToNote(driver))
             .onTrue(new IntakeSetAcquire())
-            .whileTrue((new LEDSet(LEDInstructions.FIELD_RELATIVE_INTAKING)))
+            // .whileTrue((new LEDSet(LEDInstructions.FIELD_RELATIVE_INTAKING)))
             .onFalse(new IntakeStop());
         
         // intake robot relative
         driver.getLeftTriggerButton()
             .onTrue(new ArmToFeed())
             .onTrue(new IntakeSetAcquire())
-            .whileTrue(new LEDSet(LEDInstructions.ROBOT_RELATIVE_INTAKING))
+            // .whileTrue(new LEDSet(LEDInstructions.ROBOT_RELATIVE_INTAKING))
             .onFalse(new IntakeStop());
         
         // deacquire
         driver.getDPadLeft()
             .onTrue(new IntakeDeacquire())
             .onTrue(new ShooterFeederDeacquire())
-            .whileTrue(new LEDSet(LEDInstructions.DEACQUIRING))
+            // .whileTrue(new LEDSet(LEDInstructions.DEACQUIRING))
             .onFalse(new IntakeStop())
             .onFalse(new ShooterFeederStop());
         
@@ -175,8 +175,8 @@ public class RobotContainer {
                                 .alongWith(new ShooterWaitForTarget().withTimeout(Settings.Shooter.MAX_WAIT_TO_REACH_TARGET)))
                         .andThen(new WaitUntilCommand(() -> swerve.isAlignedToSpeaker()).andThen(new WaitCommand(0.25)))
                         .andThen(new ShooterFeederShoot())
-                    )
-                    .alongWith(new LEDSet(LEDInstructions.SPEAKER_ALIGN)),
+                    ),
+                    // .alongWith(new LEDSet(LEDInstructions.SPEAKER_ALIGN)),
                 () -> Arm.getInstance().getState() == Arm.State.AMP))
             .onFalse(new ShooterFeederStop())
             .onFalse(new ArmToFeed().onlyIf(() -> arm.getState() == Arm.State.SPEAKER));
@@ -190,7 +190,7 @@ public class RobotContainer {
                         .andThen(new WaitUntilCommand(() -> swerve.isAlignedToFerry()))
                         .andThen(new ShooterFeederShoot())
                     )
-                    .alongWith(new LEDSet(LEDInstructions.LOB_FERRY_ALIGN))
+                    // .alongWith(new LEDSet(LEDInstructions.LOB_FERRY_ALIGN))
             )
             .onFalse(new ShooterFeederStop())
             .onFalse(new ArmToFeed());
@@ -220,7 +220,7 @@ public class RobotContainer {
                                 .alongWith(new ShooterWaitForTarget().withTimeout(Settings.Shooter.MAX_WAIT_TO_REACH_TARGET)))
                         .andThen(new ShooterFeederShoot())
                         )
-            .whileTrue(new LEDSet(LEDInstructions.SPEAKER_MANUAL))
+            // .whileTrue(new LEDSet(LEDInstructions.SPEAKER_MANUAL))
             .onFalse(new ShooterFeederStop())
             .onFalse(new ArmToFeed());
         
@@ -233,7 +233,7 @@ public class RobotContainer {
                         .andThen(new WaitUntilCommand(() -> swerve.isAlignedToManualFerry()))
                         .andThen(new ShooterFeederShoot())
                     )
-                    .alongWith(new LEDSet(LEDInstructions.LOB_FERRY_ALIGN_MANUAL))
+                    // .alongWith(new LEDSet(LEDInstructions.LOB_FERRY_ALIGN_MANUAL))
             )
             .onFalse(new ShooterFeederStop())
             .onFalse(new ArmToFeed());
@@ -247,13 +247,13 @@ public class RobotContainer {
                         .andThen(new WaitUntilCommand(() -> swerve.isAlignedToManualFerry()))
                         .andThen(new ShooterFeederShoot())
                     )
-                    .alongWith(new LEDSet(LEDInstructions.LOW_FERRY_ALIGN_MANUAL))
+                    // .alongWith(new LEDSet(LEDInstructions.LOW_FERRY_ALIGN_MANUAL))
             )
             .onFalse(new ShooterFeederStop())
             .onFalse(new ArmToFeed());
         
         // human player attention button
-        driver.getRightButton().whileTrue(new LEDSet(LEDInstructions.ATTENTION));
+        // driver.getRightButton().whileTrue(new LEDSet(LEDInstructions.ATTENTION));
     }
 
     private void configureOperatorBindings() {
