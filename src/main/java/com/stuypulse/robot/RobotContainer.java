@@ -46,6 +46,7 @@ import com.stuypulse.robot.util.PathUtil.AutonConfig;
 import com.stuypulse.stuylib.input.Gamepad;
 import com.stuypulse.stuylib.input.gamepads.AutoGamepad;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -97,18 +98,18 @@ public class RobotContainer {
         new Trigger(() -> Intake.getInstance().getState() == Intake.State.ACQUIRING && Intake.getInstance().hasNote())
             .onTrue(new BuzzController(driver, 1));
 
-        new Trigger(() -> Intake.getInstance().getState() == Intake.State.STOP
-            && !Intake.getInstance().hasNote()
-            && !Shooter.getInstance().hasNote()
-            && SwerveDrive.getInstance().isMoving()
-            && Robot.inTeleop()
-        ).onTrue(new IntakeSetAcquire());
+        // new Trigger(() -> Intake.getInstance().getState() == Intake.State.STOP
+        //     && !Intake.getInstance().hasNote()
+        //     && !Shooter.getInstance().hasNote()
+        //     && SwerveDrive.getInstance().isMoving()
+        //     && Robot.inTeleop()
+        // ).onTrue(new IntakeSetAcquire());
 
-        new Trigger(() -> Intake.getInstance().getState() == Intake.State.ACQUIRING
-            && !SwerveDrive.getInstance().isMoving()
-            && Robot.inTeleop()
-            && !(driver.getRightTriggerPressed() || driver.getLeftTriggerPressed())
-        ).onTrue(new IntakeStop());
+        // new Trigger(() -> Intake.getInstance().getState() == Intake.State.ACQUIRING
+        //     && !SwerveDrive.getInstance().isMoving()
+        //     && Robot.inTeleop()
+        //     && !(driver.getRightTriggerPressed() || driver.getLeftTriggerPressed())
+        // ).onTrue(new IntakeStop());
     }
 
     /****************/
@@ -130,6 +131,13 @@ public class RobotContainer {
     }
 
     private void configureDriverBindings() {
+        new Trigger(() -> driver.getLeftStick().distance() > Settings.Driver.Drive.DEADBAND.get())
+            .onTrue(new IntakeSetAcquire());
+
+        new Trigger(() -> driver.getLeftStick().distance() < Settings.Driver.Drive.DEADBAND.get()
+                    && !(driver.getRightTriggerPressed() || driver.getLeftTriggerPressed())
+        ).onTrue(new IntakeStop());
+        
         driver.getDPadRight().onTrue(new SwerveDriveSeedFieldRelative());
 
         driver.getDPadUp()
