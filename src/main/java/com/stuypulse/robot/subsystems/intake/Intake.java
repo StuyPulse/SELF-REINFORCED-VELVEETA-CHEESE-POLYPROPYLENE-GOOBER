@@ -50,14 +50,6 @@ public abstract class Intake extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (state == State.STOP
-            && !hasNote()
-            && !Shooter.getInstance().hasNote()
-            && SwerveDrive.getInstance().isMoving()
-            && Robot.inTeleop()
-        ) {
-            setState(State.ACQUIRING);
-        }
         if (state == State.ACQUIRING && hasNote()) {
             state = State.STOP;
         }
