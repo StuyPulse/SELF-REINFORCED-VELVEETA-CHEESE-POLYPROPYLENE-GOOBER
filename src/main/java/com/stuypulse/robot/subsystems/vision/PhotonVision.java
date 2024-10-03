@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.photonvision.EstimatedRobotPose;
@@ -28,6 +30,8 @@ public class PhotonVision extends AprilTagVision {
     private final boolean[] enabled;
     private final PhotonPoseEstimator[] poseEstimators;
     private final ArrayList<VisionData> outputs;
+
+    private int[] whitelist;
 
     private final FieldObject2d robot;
 
@@ -52,6 +56,8 @@ public class PhotonVision extends AprilTagVision {
                 );
         }
 
+        whitelist = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+
         outputs = new ArrayList<VisionData>();
 
         robot = SwerveDrive.getInstance().getField().getObject("Vision Pose");
@@ -74,7 +80,7 @@ public class PhotonVision extends AprilTagVision {
      */
     @Override
     public void setTagWhitelist(int... ids) {
-        
+        whitelist = ids;
     }
 
     @Override
@@ -94,6 +100,13 @@ public class PhotonVision extends AprilTagVision {
         return ids.stream().mapToInt(i -> i).toArray();
     }
 
+    private void filterResult(PhotonPipelineResult result) {
+        result.targets.removeIf((PhotonTrackedTarget target) -> 
+                                target.getPoseAmbiguity() > Settings.Vision.POSE_AMBIGUITY_RATIO_THRESHOLD 
+                                || !Arrays.stream(whitelist).anyMatch((int id) -> id == target.getFiducialId())
+                                );
+    }
+
     @Override
     public void periodic() {
         super.periodic();
@@ -104,17 +117,16 @@ public class PhotonVision extends AprilTagVision {
             final int index = i;
             if (enabled[index]) {
                 PhotonPipelineResult latestResult = cameras[index].getLatestResult();
+                filterResult(latestResult);
+                Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimators[index].update(latestResult);
                 if (latestResult.hasTargets()) {
-                    if (latestResult.getBestTarget().getPoseAmbiguity() < Settings.Vision.POSE_AMBIGUITY_RATIO_THRESHOLD) {
-                        Optional<EstimatedRobotPose> estimatedRobotPose = poseEstimators[index].update(latestResult);
-                        estimatedRobotPose.ifPresent(
-                            (EstimatedRobotPose robotPose) -> {
-                                VisionData data = new VisionData(robotPose.estimatedPose, getIDs(latestResult), robotPose.timestampSeconds, latestResult.getBestTarget().getArea());
-                                outputs.add(data);
-                                updateTelemetry("Vision/" + cameras[index].getName(), data);
-                            }
-                        );
-                    }
+                    estimatedRobotPose.ifPresent(
+                        (EstimatedRobotPose robotPose) -> {
+                            VisionData data = new VisionData(robotPose.estimatedPose, getIDs(latestResult), robotPose.timestampSeconds, latestResult.getBestTarget().getArea());
+                            outputs.add(data);
+                            updateTelemetry("Vision/" + cameras[index].getName(), data);
+                        }
+                    );
                 }
             }
         }

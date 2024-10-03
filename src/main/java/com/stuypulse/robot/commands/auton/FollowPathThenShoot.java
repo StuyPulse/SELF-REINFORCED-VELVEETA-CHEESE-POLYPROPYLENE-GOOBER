@@ -24,7 +24,7 @@ public class FollowPathThenShoot extends SequentialCommandGroup{
                 SwerveDrive.getInstance().followPathCommand(path),
                 new WaitCommand(totalPathTime > 1.5 ? totalPathTime - 1.0 : 0)
                     // wait for handoff
-                    .andThen(new WaitUntilCommand(() -> Shooter.getInstance().hasNote()).onlyIf(() -> Intake.getInstance().hasNote()).alongWith(new WaitCommand(0.75)))
+                    .andThen(new WaitUntilCommand(() -> Shooter.getInstance().hasNote()).withTimeout(3.0).onlyIf(() -> Intake.getInstance().hasNote()))
                     .andThen(new ArmToSpeaker().onlyIf(() -> Shooter.getInstance().hasNote()))
             ),
             isLastShot ? ShootRoutine.fromAnywhereLastShot()

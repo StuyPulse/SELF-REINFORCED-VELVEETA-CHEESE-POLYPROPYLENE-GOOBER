@@ -124,7 +124,7 @@ public class ArmImpl extends Arm {
             Pose3d speakerPose = new Pose3d(
                 Field.getAllianceSpeakerPose().getX(),
                 Field.getAllianceSpeakerPose().getY(),
-                Field.SPEAKER_MAX_HEIGHT,
+                Field.SPEAKER_MAX_HEIGHT + 0.1,
                 new Rotation3d()
             );
 
@@ -148,6 +148,9 @@ public class ArmImpl extends Arm {
 
             double angleBetweenPivotToSpeakerAndArm = Units.radiansToDegrees(Math.acos(Settings.Arm.LENGTH / pivotToSpeaker.getNorm()));
 
+            if (speakerPose.toPose2d().minus(robotPose).getTranslation().getNorm() < 2.0) {
+                return -(angleBetweenPivotToSpeakerAndArm - angleFromPivotToSpeaker) + 8; 
+            }
             return -(angleBetweenPivotToSpeakerAndArm - angleFromPivotToSpeaker);
         }
         catch (Exception exception) {

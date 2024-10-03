@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 9.32365277676984,
-        "y": 4.877773358597312
+        "x": 8.282659617774593,
+        "y": 4.07671724848658
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.497337601260025,
-        "y": 6.27989797646262
+        "x": 4.738621898896219,
+        "y": 3.88245927489006
       },
       "isLocked": false,
       "linkedName": "Blue F"
     },
     {
       "anchor": {
-        "x": 4.844074705820543,
-        "y": 6.341528771227186
+        "x": 4.24738092686751,
+        "y": 5.167803455956615
       },
       "prevControl": {
-        "x": 6.271245847923244,
-        "y": 6.380372517069439
+        "x": 5.436537977800659,
+        "y": 4.006336996118933
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Blue Midline Shoot Pose"
+      "linkedName": "Blue F Shoot"
     }
   ],
   "rotationTargets": [],
@@ -39,7 +39,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 11.738504411842449,
+    "rotation": -2.200416275819262,
     "rotateFast": false
   },
   "reversed": false,

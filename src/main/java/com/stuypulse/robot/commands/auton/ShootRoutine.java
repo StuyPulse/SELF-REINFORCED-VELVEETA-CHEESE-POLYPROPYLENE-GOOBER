@@ -28,16 +28,13 @@ public abstract class ShootRoutine {
             new ArmWaitUntilAtTarget().withTimeout(Settings.Arm.MAX_WAIT_TO_REACH_TARGET)
                 .alongWith(new ShooterWaitForTarget().withTimeout(1.0)),
             new ShooterFeederShoot(),
-            new WaitUntilCommand(() -> !Shooter.getInstance().hasNote()),
+            new WaitUntilCommand(() -> !Shooter.getInstance().hasNote()).alongWith(new WaitCommand(0.5)),
             new ShooterFeederStop()
         );
     }
 
     public static Command fromAnywhere() {
         return new SequentialCommandGroup(
-            new WaitUntilCommand(() -> Shooter.getInstance().hasNote())
-                .onlyIf(() -> Intake.getInstance().hasNote())
-                .withTimeout(2.0),
             new ArmToSpeaker(),
             new ParallelCommandGroup(
                 new SwerveDriveAlignToSpeaker(),
@@ -45,7 +42,7 @@ public abstract class ShootRoutine {
                 new ShooterWaitForTarget().withTimeout(Settings.Shooter.MAX_WAIT_TO_REACH_TARGET)
             ),
             new ShooterFeederShoot(),
-            new WaitUntilCommand(() -> !Shooter.getInstance().hasNote()),
+            new WaitUntilCommand(() -> !Shooter.getInstance().hasNote()).alongWith(new WaitCommand(1.25)),
             new ShooterFeederStop()
         );
     }

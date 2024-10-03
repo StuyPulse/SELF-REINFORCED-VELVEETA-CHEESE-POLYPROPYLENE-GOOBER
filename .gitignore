@@ -162,7 +162,6 @@ bin/
 *-window.json
 
 # Logs
-*.wpilog
 *.log
 
 #ctre simulation

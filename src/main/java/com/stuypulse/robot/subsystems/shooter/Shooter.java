@@ -6,6 +6,7 @@ import com.stuypulse.robot.subsystems.arm.Arm;
 import com.stuypulse.robot.subsystems.intake.Intake;
 import com.stuypulse.robot.util.ShooterSpeeds;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public abstract class Shooter extends SubsystemBase {
@@ -62,7 +63,7 @@ public abstract class Shooter extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // SmartDashboard.putString("Shooter/Feeder State", getFeederState().toString());
+        SmartDashboard.putString("Shooter/Feeder State", getFeederState().toString());
         
         // feeder automatically pushes note further into shooter when its sticking too far out
         if (Arm.getInstance().getState() == Arm.State.AMP && !hasNote() && feederState != FeederState.DEACQUIRING) {

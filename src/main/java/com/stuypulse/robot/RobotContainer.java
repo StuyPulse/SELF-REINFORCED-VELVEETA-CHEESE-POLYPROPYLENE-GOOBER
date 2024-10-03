@@ -1,9 +1,6 @@
 package com.stuypulse.robot;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.ctre.phoenix6.Utils;
-import com.pathplanner.lib.path.PathPlannerPath;
 import com.stuypulse.robot.commands.BuzzController;
 import com.stuypulse.robot.commands.arm.ArmToAmp;
 import com.stuypulse.robot.commands.arm.ArmToClimbing;
@@ -16,10 +13,10 @@ import com.stuypulse.robot.commands.arm.ArmToPreClimb;
 import com.stuypulse.robot.commands.arm.ArmToSpeaker;
 import com.stuypulse.robot.commands.arm.ArmToSubwooferShot;
 import com.stuypulse.robot.commands.arm.ArmWaitUntilAtTarget;
+import com.stuypulse.robot.commands.auton.CenterMobilityWithWait;
 import com.stuypulse.robot.commands.auton.DoNothingAuton;
 import com.stuypulse.robot.commands.auton.Mobility;
 import com.stuypulse.robot.commands.auton.ADEF.FivePieceADEF;
-import com.stuypulse.robot.commands.auton.BCA.AltFourPieceBCA;
 import com.stuypulse.robot.commands.auton.BCA.FourPieceBCA;
 import com.stuypulse.robot.commands.auton.HGF.FourPieceHGF;
 import com.stuypulse.robot.commands.auton.SideAutons.OnePieceAmpSide;
@@ -28,7 +25,6 @@ import com.stuypulse.robot.commands.intake.IntakeDeacquire;
 import com.stuypulse.robot.commands.intake.IntakeSetAcquire;
 import com.stuypulse.robot.commands.intake.IntakeStop;
 import com.stuypulse.robot.commands.leds.LEDDefaultMode;
-import com.stuypulse.robot.commands.leds.LEDReset;
 import com.stuypulse.robot.commands.leds.LEDSet;
 import com.stuypulse.robot.commands.shooter.ShooterFeederDeacquire;
 import com.stuypulse.robot.commands.shooter.ShooterFeederShoot;
@@ -36,29 +32,25 @@ import com.stuypulse.robot.commands.shooter.ShooterFeederStop;
 import com.stuypulse.robot.commands.shooter.ShooterWaitForTarget;
 import com.stuypulse.robot.commands.swerve.SwerveDriveDrive;
 import com.stuypulse.robot.commands.swerve.SwerveDriveDriveRobotRelative;
-import com.stuypulse.robot.commands.swerve.driveAligned.SwerveDriveDriveAlignedAmp;
+import com.stuypulse.robot.commands.swerve.SwerveDriveSeedFieldRelative;
 import com.stuypulse.robot.commands.swerve.driveAligned.SwerveDriveDriveAlignedFerry;
 import com.stuypulse.robot.commands.swerve.driveAligned.SwerveDriveDriveAlignedManualFerry;
 import com.stuypulse.robot.commands.swerve.driveAligned.SwerveDriveDriveAlignedSpeaker;
-import com.stuypulse.robot.commands.swerve.SwerveDriveSeedFieldRelative;
+import com.stuypulse.robot.commands.vision.VisionChangeWhiteList;
+import com.stuypulse.robot.commands.vision.VisionReloadWhiteList;
 import com.stuypulse.robot.constants.LEDInstructions;
 import com.stuypulse.robot.constants.Ports;
 import com.stuypulse.robot.constants.Settings;
-import com.stuypulse.stuylib.input.Gamepad;
-import com.stuypulse.stuylib.input.gamepads.AutoGamepad;
+import com.stuypulse.robot.subsystems.arm.Arm;
+import com.stuypulse.robot.subsystems.intake.Intake;
+import com.stuypulse.robot.subsystems.leds.LEDController;
 import com.stuypulse.robot.subsystems.shooter.Shooter;
 import com.stuypulse.robot.subsystems.swerve.SwerveDrive;
 import com.stuypulse.robot.subsystems.swerve.Telemetry;
 import com.stuypulse.robot.subsystems.vision.AprilTagVision;
 import com.stuypulse.robot.util.PathUtil.AutonConfig;
-import com.stuypulse.robot.util.ShooterLobFerryInterpolation;
-import com.stuypulse.robot.util.ShooterSpeeds;
-import com.stuypulse.robot.subsystems.arm.Arm;
-import com.stuypulse.robot.subsystems.intake.Intake;
-import com.stuypulse.robot.subsystems.leds.LEDController;
-import com.stuypulse.robot.subsystems.leds.instructions.LEDInstruction;
-import com.stuypulse.robot.subsystems.leds.instructions.LEDPulseColor;
-import com.stuypulse.robot.subsystems.leds.instructions.LEDRainbow;
+import com.stuypulse.stuylib.input.Gamepad;
+import com.stuypulse.stuylib.input.gamepads.AutoGamepad;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -88,7 +80,7 @@ public class RobotContainer {
 
     public final LEDController leds = LEDController.getInstance();
 
-    // private final Telemetry logger = new Telemetry();
+    private final Telemetry logger = new Telemetry();
 
     // Autons
     private static SendableChooser<Command> autonChooser = new SendableChooser<>();
@@ -103,12 +95,13 @@ public class RobotContainer {
         if (Utils.isSimulation()) {
             swerve.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(0)));
         }
-        // swerve.registerTelemetry(logger::telemeterize);
+        swerve.registerTelemetry(logger::telemeterize);
 
         LiveWindow.disableAllTelemetry();
 
-        new Trigger(() -> Intake.getInstance().getState() == Intake.State.ACQUIRING && Intake.getInstance().hasNote())
-            .onTrue(new BuzzController(driver, 1));
+        new Trigger(() -> Intake.getInstance().getState() == Intake.State.ACQUIRING && Intake.getInstance().hasNote()
+                    || ((driver.getLeftTriggerPressed() || driver.getRightTriggerPressed()) && (Intake.getInstance().hasNote() || Shooter.getInstance().hasNote())))
+            .onTrue(new BuzzController(driver, 1, 1));
     }
 
     /****************/
@@ -149,6 +142,7 @@ public class RobotContainer {
         
         // intake robot relative
         driver.getLeftTriggerButton()
+            .whileTrue(new SwerveDriveDriveRobotRelative(driver))
             .onTrue(new ArmToFeed())
             .onTrue(new IntakeSetAcquire())
             .whileTrue(new LEDSet(LEDInstructions.ROBOT_RELATIVE_INTAKING))
@@ -165,6 +159,10 @@ public class RobotContainer {
         // speaker align and score 
         // score amp
         driver.getRightBumper()
+            .onTrue(new ConditionalCommand(
+                new VisionChangeWhiteList(7, 8), 
+                new VisionChangeWhiteList(3, 4), 
+                () -> Robot.isBlue()))
             .whileTrue(new ConditionalCommand(
                 new SwerveDriveDrive(driver)
                     .alongWith(new ArmWaitUntilAtTarget().withTimeout(Settings.Arm.MAX_WAIT_TO_REACH_TARGET)
@@ -179,7 +177,8 @@ public class RobotContainer {
                     .alongWith(new LEDSet(LEDInstructions.SPEAKER_ALIGN)),
                 () -> Arm.getInstance().getState() == Arm.State.AMP))
             .onFalse(new ShooterFeederStop())
-            .onFalse(new ArmToFeed().onlyIf(() -> arm.getState() == Arm.State.SPEAKER));
+            .onFalse(new ArmToFeed().onlyIf(() -> arm.getState() == Arm.State.SPEAKER))
+            .onFalse(new VisionReloadWhiteList());
 
         // lob ferry align and shoot
         driver.getLeftStickButton()
@@ -197,7 +196,7 @@ public class RobotContainer {
 
 
         // low ferry align and shoot
-        driver.getRightStickButton()
+        driver.getLeftMenuButton()
             .whileTrue(new SwerveDriveDriveAlignedFerry(driver)
                     .alongWith(new ArmToLowFerry()
                         .andThen(new ArmWaitUntilAtTarget().withTimeout(Settings.Arm.MAX_WAIT_TO_REACH_TARGET)
@@ -253,7 +252,13 @@ public class RobotContainer {
             .onFalse(new ArmToFeed());
         
         // human player attention button
-        driver.getRightButton().whileTrue(new LEDSet(LEDInstructions.ATTENTION));
+        // driver.getRightButton().whileTrue(new LEDSet(LEDInstructions.ATTENTION));
+
+        // driver.getRightButton()
+        //     .onTrue(new IntakeDeacquire())
+        //     .onTrue(new ShooterFeederAcquire())
+        //     .onFalse(new IntakeStop())
+        //     .onFalse(new ShooterFeederStop());
     }
 
     private void configureOperatorBindings() {
@@ -272,6 +277,11 @@ public class RobotContainer {
         AutonConfig MOBILITY_BLUE = new AutonConfig("Mobility", Mobility::new, "Mobility");
         AutonConfig MOBILITY_RED = new AutonConfig("Mobility", Mobility::new, "Mobility");
 
+        AutonConfig CENTER_MOBILITY_BLUE = new AutonConfig("Center Mobility", CenterMobilityWithWait::new, 
+            "Mobility");
+        AutonConfig CENTER_MOBILITY_RED = new AutonConfig("Center Mobility", CenterMobilityWithWait::new, 
+        "Mobility");
+
         // BCA
         AutonConfig BCA_BLUE = new AutonConfig("4 BCA", FourPieceBCA::new,
         "Blue Center to B", "Blue B to Center", "Blue Center to C", "Blue C to Shoot Before A", "Blue Center to A", "Blue A to Center");
@@ -286,9 +296,29 @@ public class RobotContainer {
         
         // ADEF
         AutonConfig ADEF_BLUE = new AutonConfig("5 ADEF", FivePieceADEF::new,
-        "Blue Amp to A", "Blue A to D", "Blue D to Shoot", "Blue D Shoot to E", "Blue E to Shoot", "Blue E Shoot to F", "Blue F to Shoot");
+        "Blue Amp to A", "Blue A to D", "Blue D to Shoot", "Blue D Shoot to E", "Blue E to Shoot", "Blue E Shoot to F");
         AutonConfig ADEF_RED = new AutonConfig("5 ADEF", FivePieceADEF::new,
-        "Red Amp to A", "Red A to D", "Red D to Shoot", "Red D Shoot to E", "Red E to Shoot", "Red E Shoot to F", "Red F to Shoot");
+        "Red Amp to A", "Red A to D", "Red D to Shoot", "Red D Shoot to E", "Red E to Shoot", "Red E Shoot to F");
+
+        AutonConfig AMP_SIDE_ONE_PIECE_BLUE = new AutonConfig("Amp Side One Piece", OnePieceAmpSide::new, 
+            "Blue Amp Side Mobility");
+        AutonConfig AMP_SIDE_ONE_PIECE_RED = new AutonConfig("Amp Side One Piece", OnePieceAmpSide::new, 
+            "Red Amp Side Mobility");
+
+        AutonConfig SOURCE_SIDE_ONE_PIECE_BLUE = new AutonConfig("Source Side One Piece", OnePieceSourceSide::new, 
+        "Blue Source Side Mobility");
+
+        AutonConfig SOURCE_SIDE_ONE_PIECE_RED = new AutonConfig("Source Side One Piece", OnePieceSourceSide::new, 
+        "Red Source Side Mobility");
+
+        AMP_SIDE_ONE_PIECE_BLUE.registerBlue(autonChooser);
+        AMP_SIDE_ONE_PIECE_RED.registerRed(autonChooser);
+
+        CENTER_MOBILITY_BLUE.registerBlue(autonChooser);
+        CENTER_MOBILITY_RED.registerRed(autonChooser);
+
+        SOURCE_SIDE_ONE_PIECE_BLUE.registerBlue(autonChooser);
+        SOURCE_SIDE_ONE_PIECE_RED.registerRed(autonChooser);
 
         MOBILITY_BLUE.registerBlue(autonChooser);
         MOBILITY_RED.registerRed(autonChooser);

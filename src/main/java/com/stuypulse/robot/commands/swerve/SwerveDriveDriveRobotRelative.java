@@ -64,8 +64,8 @@ public class SwerveDriveDriveRobotRelative extends Command {
     @Override
     public void execute() {
         Vector2D velocity = Robot.isBlue() ? speed.get() : speed.get().mul(-1);
-        swerve.setControl(drive.withVelocityX(velocity.y)
-                .withVelocityY(-velocity.x)
+        swerve.setControl(drive.withVelocityX(Robot.isBlue() ? velocity.y : -velocity.y)
+                .withVelocityY(Robot.isBlue() ? -velocity.x : velocity.x)
                 .withRotationalRate(turn.get())         
             );
     }

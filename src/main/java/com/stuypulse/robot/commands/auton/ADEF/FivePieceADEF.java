@@ -40,9 +40,9 @@ public class FivePieceADEF extends SequentialCommandGroup {
 
             // Drive to F + Shoot F
             new IntakeSetAcquire(),
-            SwerveDrive.getInstance().followPathCommand(paths[5]),
-            new FollowPathThenShoot(paths[6], true),
-            new ArmToFeed()
+            SwerveDrive.getInstance().followPathCommand(paths[5])
+            // new FollowPathThenShoot(paths[6], true),
+            // new ArmToFeed()
         );
     }
 

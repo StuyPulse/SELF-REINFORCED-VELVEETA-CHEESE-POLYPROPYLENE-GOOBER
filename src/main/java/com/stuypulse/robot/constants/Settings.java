@@ -36,7 +36,7 @@ public interface Settings {
     public interface Arm {
         double LENGTH = Units.inchesToMeters(16.5);
 
-        SmartNumber MAX_VELOCITY = new SmartNumber("Arm/Max Velocity (deg/s)", SAFE_MODE_ENABLED ? 200 : 900);
+        SmartNumber MAX_VELOCITY = new SmartNumber("Arm/Max Velocity (deg/s)", SAFE_MODE_ENABLED ? 200 : 750);
         SmartNumber MAX_ACCELERATION = new SmartNumber("Arm/Max Acceleration (deg/s^2)", SAFE_MODE_ENABLED ? 200 : 700);
 
         SmartNumber MAX_ANGLE = new SmartNumber("Arm/Max Angle (deg)", 85);
@@ -154,7 +154,7 @@ public interface Settings {
 
         double MAX_LINEAR_VELOCITY = SAFE_MODE_ENABLED ? 1.0 : 4.9;
         double MAX_LINEAR_ACCEL = SAFE_MODE_ENABLED ? 10 : 15;
-        double MAX_ANGULAR_VELOCITY = SAFE_MODE_ENABLED ? 3.0 : 10.0;
+        double MAX_ANGULAR_VELOCITY = SAFE_MODE_ENABLED ? 3.0 : 6.75;
         double MAX_ANGULAR_ACCEL = SAFE_MODE_ENABLED ? 25.0 : 200.0;
 
         String CAN_BUS_NAME = "swerve";
